@@ -3,7 +3,6 @@ package com.mljr.destiny.aop;
 import com.mljr.destiny.annotations.IntfLog;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
-
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -36,6 +35,12 @@ public class IntfLogAspect {
 
     }
 
+//    @Pointcut("@annotation(com.mljr.destiny.annotations.IntfLogs)")
+//    public void aspect2() {
+//
+//    }
+
+//    @Around(" (aspect()&&@annotation(logPoint)) || (aspect2()&& @annotation(intfLogs))")
     @Around("aspect()&&@annotation(logPoint)")
     public Object around(ProceedingJoinPoint joinPoint, IntfLog logPoint) {
 
@@ -46,21 +51,37 @@ public class IntfLogAspect {
             params = getParams(joinPoint.getArgs());
 
             log.info("methodName={}",methodName);
-            log.info("params={}",methodName);
-            params.stream().forEach(p-> System.out.print(p+","));
+            log.info("params=");
+            params.stream().forEach(p-> log.info(p+","));
 
-            String url = logPoint.url();
-            String desc = logPoint.desc();
-            Class clazz = logPoint.callbackClass();
+            if(logPoint !=null){
+                saveLog(logPoint);
+            }
 
-            log.info("save intf log: url={},desc={},class={}",url,desc,clazz.getName());
-
+//            if(intfLogs!=null){
+//                IntfLog[] logs = intfLogs.value();
+//                for(IntfLog log : logs){
+//                    saveLog(log);
+//                }
+//            }
 
         }catch (Exception e){
             log.error("error=",e);
         }
 
         return null;
+    }
+
+    /**
+     * 保存日志
+     * @param logPoint
+     */
+    private void saveLog(IntfLog logPoint) {
+        String url = logPoint.url();
+        String desc = logPoint.desc();
+        Class clazz = logPoint.callbackClass();
+
+        log.info("save intf log: url={},desc={},class={}",url,desc,clazz.getName());
     }
 
     private List<Object> getParams(Object[] arr) {

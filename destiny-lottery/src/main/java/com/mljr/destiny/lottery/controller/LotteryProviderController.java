@@ -1,7 +1,6 @@
 package com.mljr.destiny.lottery.controller;
 
 import com.mljr.destiny.api.lottery.LotteryApi;
-import com.mljr.destiny.common.bean.dto.RespDTO;
 import com.mljr.destiny.dto.BaseRPCResponse;
 import com.mljr.destiny.dto.LotteryDTO;
 import lombok.extern.slf4j.Slf4j;
