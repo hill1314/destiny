@@ -138,5 +138,6 @@
     <orderEntry type="module" module-name="destiny-api" />
     <orderEntry type="module" module-name="destiny-entity" />
     <orderEntry type="module" module-name="destiny-common" />
+    <orderEntry type="library" name="Maven: org.aspectj:aspectjrt:1.8.13" level="project" />
   </component>
 </module>

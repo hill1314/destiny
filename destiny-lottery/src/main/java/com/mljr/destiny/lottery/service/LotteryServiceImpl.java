@@ -1,5 +1,6 @@
 package com.mljr.destiny.lottery.service;
 
+import com.mljr.destiny.annotations.IntfLog;
 import com.mljr.destiny.api.lottery.LotteryApi;
 import com.mljr.destiny.common.bean.dto.RespDTO;
 import com.mljr.destiny.dto.BaseRPCResponse;
@@ -25,6 +26,7 @@ public class LotteryServiceImpl implements LotteryApi{
      * @return
      */
     @Override
+    @IntfLog(url = "doLotteryUrl",desc = "抽奖")
     public BaseRPCResponse<LotteryDTO> doLottery(String userId,Long activityId) {
         logger.info("执行抽奖：activityId={}，userId={}",activityId,userId);
         BaseRPCResponse<LotteryDTO> response = new BaseRPCResponse<>();
