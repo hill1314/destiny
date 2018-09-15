@@ -3,7 +3,7 @@ package com.hull.destiny.business.service;
 import com.hull.destiny.api.prize.PrizeApi;
 import com.hull.destiny.business.consts.ServerUrlConst;
 import com.hull.destiny.common.bean.dto.RespDTO;
-import com.hull.destiny.common.entity.PriPrizeInfoOrg;
+import com.hull.destiny.po.lottery.PriPrizeInfoOrg;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;

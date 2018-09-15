@@ -1,4 +1,4 @@
-package com.hull.destiny.common.entity;
+package com.hull.destiny.po.lottery;
 
 import com.hull.destiny.common.BaseEntity;
 

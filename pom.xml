@@ -34,6 +34,7 @@
         <module>destiny-gateway</module>
         <module>destiny-canal</module>
         <module>destiny-digger</module>
+        <module>destiny-web</module>
     </modules>
 
 

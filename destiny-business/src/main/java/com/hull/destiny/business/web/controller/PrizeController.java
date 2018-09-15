@@ -1,7 +1,7 @@
 package com.hull.destiny.business.web.controller;
 
 import com.hull.destiny.api.prize.PrizeApi;
-import com.hull.destiny.common.entity.PriPrizeInfoOrg;
+import com.hull.destiny.po.lottery.PriPrizeInfoOrg;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

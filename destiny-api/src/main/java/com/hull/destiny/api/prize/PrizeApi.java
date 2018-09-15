@@ -1,6 +1,6 @@
 package com.hull.destiny.api.prize;
 
-import com.hull.destiny.common.entity.PriPrizeInfoOrg;
+import com.hull.destiny.po.lottery.PriPrizeInfoOrg;
 
 import java.util.List;
 
