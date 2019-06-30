@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link href="/element-ui/lib/theme-default/index.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        .table-expand {
+            font-size: 0;
+        }
+
+        .table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+
+        .table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 30%;
+        }
+    </style>
+</head>
+<body>
+<div id="summary" class="wrap">
+    <el-form :inline="true" :model="orderSummaryCondition" class="mg-top8">
+        <el-row>
+            <el-col :span="5">
+                <el-form-item>
+                    <el-date-picker
+                            v-model="orderSummaryCondition.month"
+                            type="month"
+                            placeholder="提成月份" format="yyyyMM">
+                    </el-date-picker>
+                </el-form-item>
+            </el-col>
+            <el-col :span="4">
+                <el-form-item>
+                    <el-input v-model.number="orderSummaryCondition.staffId" placeholder="员工id" type="number"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="4">
+                <el-form-item>
+                    <el-input v-model="orderSummaryCondition.staffName" placeholder="员工姓名"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="4">
+                <el-form-item>
+                    <el-select v-model="orderSummaryCondition.roleId" placeholder="按提成职位查询">
+                        <el-option label="销售" value="5"></el-option>
+                        <el-option label="销售主管" value="4"></el-option>
+                        <el-option label="城市经理" value="3"></el-option>
+                        <el-option label="区域经理" value="2"></el-option>
+                        <el-option label="大区经理" value="1"></el-option>
+                        <el-option label="运营专员" value="6"></el-option>
+                        <el-option label="抵押专员" value="8"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-col>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+        </el-row>
+    </el-form>
+    <el-row>
+        <el-col :span="24">
+            <div class="mg-top4 tool-bar">
+                <el-button type="primary" round @click="regenerateSummary" v-bind:disabled="isValid">重新汇总并生成excel</el-button>
+                <el-button type="primary" round @click="downloadSummary" >下载汇总</el-button>
+            </div>
+        </el-col>
+    </el-row>
+    <el-row>
+        <el-col :span="24">
+            <el-table :data="orderSummaryList" border v-loading.body="loading" tooltip-effect="dark" max-height="500">
+                <el-table-column type="expand">
+                    <template scope="props">
+                        <el-form label-position="left" inline class="table-expand">
+                            <el-form-item label="主城名称">
+                                <span>{{ props.row.masterCityName }}</span>
+                            </el-form-item>
+                        </el-form>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="staffId" label="员工id" align="center" width="90"></el-table-column>
+                <el-table-column prop="staffName" label="员工姓名" align="center" width="90"></el-table-column>
+                <el-table-column prop="roleId" label="提成职位" header-align="center" align="center" width="90">
+                </el-table-column>
+                <el-table-column prop="loanCommission" label="放款提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="riskManagementReserved" label="预留风控金" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="insuranceCommission" label="保险提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="mortgageCommission" label="抵押提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="gpsCommission" label="gps 提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="lifeInsuranceCommission" label="人身险提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="renewInsuranceCommission" label="续保押金提成" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="commissionTotal" label="提成总金额（不包含预留风控金）" header-align="center"
+                                 align="center"></el-table-column>
+            </el-table>
+        </el-col>
+    </el-row>
+
+    <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="page.pageNo"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="page.pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="page.totalCount"
+            style="text-align: right;margin-top: 10px;">
+    </el-pagination>
+</div>
+</body>
+<!-- 先引入 Vue -->
+<script src="/js/vue.min.js"></script>
+<!-- 引入组件库 -->
+<script src="/element-ui/lib/index.js"></script>
+<script src="/js/axios.min.js"></script>
+<script src="/js/moment.js"></script>
+<script>
+    var vm = new Vue({
+        el: '#summary',
+        data: {
+            orderSummaryList: [],
+            orderSummaryCondition: {
+                month: '',
+                staffId:'',
+                staffName:'',
+                roleId:''
+            },
+            page: {
+                pageNo: 1,
+                pageSize: 10,
+                totalCount: 0
+            },
+            loading: false,
+            isValid:false,
+            nowDate:''
+        },
+        methods: {
+            checkNowDate:function(){
+                var date=moment(this.orderSummaryCondition.month).format("YYYYMM");
+                if(vm.nowDate==date){
+                    vm.isValid=false;
+                }else{
+                    vm.isValid=true;
+                }
+            },
+            regenerateSummary: function () {
+                this.$confirm('您好！重新生成汇总需要30分钟左右,确定重新生成汇总?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function(){
+                    var date = moment().subtract(1, 'months').calendar();
+                    var month = moment(date).format("YYYYMM");
+                    axios.get('/export/reSummary', {
+                        params: { 'month': month}
+                    }).then(function (response) {
+                        let {msg, status, data} = response.data;
+                        if (status === 0) {
+                            vm.$message({
+                                message: '已提交！',
+                                type: 'success'
+                            });
+                        } else {
+                            vm.$message({
+                                showClose: true,
+                                message: msg,
+                                type: 'error'
+                            });
+                        }
+                    }).catch(function (error) {
+                        console.log(error);
+                    });
+                })
+            },
+            downloadSummary: function () {
+                var month=moment(this.orderSummaryCondition.month).format("YYYYMM");
+                axios.get('/export/download', {
+                    params: {'type': 2,'isCheck':1,'month':month}
+                }).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status === 0) {
+                        location.href = "/export/download?month="+month+"&type=2&isCheck=0";
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                }).catch(function (error) {
+                    vm.$message({
+                        showClose: true,
+                        message: error,
+                        type: 'error'
+                    });
+                });
+            },
+            onSubmit() {
+                var month = moment(this.orderSummaryCondition.month).format("YYYYMM");
+                vm.listPage(1, this.page.pageSize, month);
+            },
+            dateFormat: function (row, column) {
+                var date = row[column.property];
+                if (date == undefined) {
+                    return "";
+                }
+                return moment(date).format("YYYY-MM-DD");
+            },
+            dateTimeFormat: function (row, column) {
+                var date = row[column.property];
+                if (date == undefined) {
+                    return "";
+                }
+                return moment(date).format("YYYY-MM-DD HH:mm:ss");
+            },
+            ready: function () {
+                var date = moment().subtract(1, 'months').calendar();
+                this.orderSummaryCondition.month = date;
+                vm.nowDate=moment(date).format("YYYYMM");
+                vm.listPage(1, vm.page.pageSize, '');
+            },
+            handleSizeChange: function (val) {
+                var month = moment(this.orderSummaryCondition.month).format("YYYYMM");
+                vm.listPage(1, val, month);
+            },
+            handleCurrentChange: function (val) {
+                var month = moment(this.orderSummaryCondition.month).format("YYYYMM");
+                vm.listPage(val, vm.page.pageSize, month);
+            },
+            listPage: function (pageNo, pageSize, month) {
+                vm.loading = true;
+                if (month == '' || month == null) {
+                    var date = moment().subtract(1, 'months').calendar();
+                    month = moment(date).format("YYYYMM");
+                }
+                var params = {
+                    month: month,
+                    staffId:this.orderSummaryCondition.staffId,
+                    staffName:this.orderSummaryCondition.staffName,
+                    roleId:this.orderSummaryCondition.roleId,
+                    pageNo: pageNo,
+                    pageSize: pageSize
+                };
+                axios.post('/orderSummary/list/pagination', params).then(function (response) {
+                    vm.orderSummaryList = response.data.list;
+                    vm.orderSummaryList.forEach(function (item) {
+                        var roleId = item.roleId;
+                        if (roleId == 8) {
+                            item.roleId = "抵押专员";
+                        } else if (roleId == 6) {
+                            item.roleId = "运营专员";
+                        } else if (roleId == 5) {
+                            item.roleId = "销售";
+                        } else if (roleId == 4) {
+                            item.roleId = "销售主管";
+                        } else if (roleId == 3) {
+                            item.roleId = "城市经理";
+                        } else if (roleId == 2) {
+                            item.roleId = "区域经理";
+                        } else if (roleId == 1) {
+                            item.roleId = "大区经理";
+                        }
+                    });
+                    vm.loading = false;
+                    vm.page.pageSize = response.data.pageSize;
+                    vm.page.pageNo = response.data.pageNo;
+                    vm.page.totalCount = response.data.totalCount;
+                    vm.checkNowDate();
+                }).catch(function (error) {
+                    console.log(error);
+                    vm.checkNowDate();
+                });
+            },
+            initObject: function (obj) {
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) { //filter,只输出man的私有属性
+                        obj[i] = '';
+                    }
+                }
+            }
+        }
+    });
+    vm.ready();
+</script>
+</html>

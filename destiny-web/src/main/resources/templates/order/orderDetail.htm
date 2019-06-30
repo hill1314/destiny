@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:el-col="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <!-- 引入样式 -->
+    <link href="/element-ui/lib/theme-default/index.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/common.css">
+    <style>
+        .table-expand {
+            font-size: 0;
+        }
+
+        .table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+
+        .table-expand {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="wrap">
+    <el-form :inline="true" :model="orderCondition" class="mg-top8">
+        <el-row>
+            <el-col :span="5">
+                <el-form-item>
+                    <el-date-picker
+                            v-model="orderCondition.calculateDate"
+                            type="month"
+                            placeholder="计费月份" format="yyyyMM">
+                    </el-date-picker>
+                </el-form-item>
+            </el-col>
+            <el-col :span="2">
+                <el-form-item>
+                    <el-input v-model="orderCondition.areaName" placeholder="区域"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="2">
+                <el-form-item>
+                    <el-input v-model="orderCondition.cityName" placeholder="城市"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="3">
+                <el-form-item>
+                    <el-select v-model="orderCondition.jobType" placeholder="按职务查询">
+                        <el-option label="销售" value="1"></el-option>
+                        <el-option label="销售主管" value="2"></el-option>
+                        <el-option label="城市经理" value="3"></el-option>
+                        <el-option label="区域经理" value="4"></el-option>
+                        <el-option label="大区经理" value="5"></el-option>
+                        <el-option label="运营专员" value="6"></el-option>
+                        <el-option label="抵押专员" value="7"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-col>
+            <el-col :span="3">
+                <el-form-item>
+                    <el-input v-model="orderCondition.jobValue" placeholder="职员ID或姓名"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="4">
+                <el-form-item>
+                    <el-input v-model="orderCondition.appCode" placeholder="单号，多个单号以,分隔"></el-input>
+                </el-form-item>
+            </el-col>
+            <el-col :span="3">
+                <el-form-item>
+                    <el-select v-model="orderCondition.rolesNotSureStatus" placeholder="不确定岗位">
+                        <el-option label="全部" value="0"></el-option>
+                        <el-option label="包含" value="1"></el-option>
+                        <el-option label="不包含" value="2"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-col>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+        </el-row>
+    </el-form>
+    <el-row>
+        <el-col :span="24">
+            <div class="mg-top4 tool-bar">
+                <el-button type="primary" round style="float: left;" @click="regenerateDetail"
+                           v-bind:disabled="isValid">重新生成明细excel
+                </el-button>
+                <el-button type="primary" round style="float: left;" @click="downloadDetail">
+                    下载明细
+                </el-button>
+                <el-button type="primary" round @click="calculateBatch" style="float: right;"
+                           :disabled="this.sels.length === 0" v-bind:disabled="isValid">批量计算
+                </el-button>
+                <el-button type="primary" round @click="editBatch" style="float: right;"
+                           :disabled="this.sels.length === 0" v-bind:disabled="isValid">批量修改
+                </el-button>
+                <el-button type="primary" round @click="addVisible = true" style="float: right;"
+                           v-bind:disabled="isValid">批量添加
+                </el-button>
+            </div>
+        </el-col>
+    </el-row>
+    <el-row>
+        <el-col :span="24">
+            <el-table :data="orderList" border v-loading.body="loading" tooltip-effect="dark" max-height="500"
+                      :fit="true" @selection-change="selsChange" ref="table" row-key="appCode">
+                <el-table-column
+                        type="selection" reserve-selection="true">
+                </el-table-column>
+                <el-table-column type="expand">
+                    <template scope="props">
+                        <el-form label-position="left" inline class="table-expand">
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="保险提成">
+                                        <span>{{ props.row.insuranceCommission }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="抵押提成">
+                                        <span>{{ props.row.mortgageCommission }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="销售GPS所得">
+                                        <span>{{ props.row.gpsSalesIncome }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="人身险提成">
+                                        <span>{{ props.row.lifeInsuranceCommission }}</span>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="续保押金提成">
+                                        <span>{{ props.row.renewInsuranceCommission }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="保险利润">
+                                        <span>{{ props.row.insuranceProfit }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="抵押利润">
+                                        <span>{{ props.row.mortgageProfit }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="GPS公司利润">
+                                        <span>{{ props.row.gpsProfits }}</span>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="人身险费用">
+                                        <span>{{ props.row.rLifeInsurance }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="续保押金结余">
+                                        <span>{{ props.row.renewInsuranceProfit }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="销售主管">
+                                        <span>{{ props.row.saleManagerName }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="城市经理">
+                                        <span>{{ props.row.cityManagerName }}</span>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="区域经理">
+                                        <span>{{ props.row.areaManagerName }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="大区经理">
+                                        <span>{{ props.row.regionManagerName }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="运营">
+                                        <span>{{ props.row.operationName }}</span>
+                                    </el-form-item>
+                                </el-col>
+                                <el-col :span="6">
+                                    <el-form-item label="抵押">
+                                        <span>{{ props.row.mortgageUsername }}</span>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                            <el-row>
+                                <el-col :span="6">
+                                    <el-form-item label="外地抵押专员">
+                                        <span>{{ props.row.mortgageNonLocalUsername }}</span>
+                                    </el-form-item>
+                                </el-col>
+                            </el-row>
+                        </el-form>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="appCode" label="单号" align="center" width="200"></el-table-column>
+                <el-table-column prop="proppserName" label="申请人" header-align="center" align="center"></el-table-column>
+                <el-table-column prop="areaName" label="区域" header-align="center" align="center"></el-table-column>
+                <el-table-column prop="cityName" label="城市" header-align="center" align="center"
+                                 width="70"></el-table-column>
+                <el-table-column prop="loanTime" label="放款日" :formatter="dateFormat" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="mortgageDate" label="抵押日" :formatter="dateFormat" header-align="center"
+                                 align="center" width="100"></el-table-column>
+                <el-table-column prop="saleName" label="销售" header-align="center" align="center"></el-table-column>
+                <el-table-column prop="modified" label="计算时间" :formatter="dateFormat" header-align="center"
+                                 align="center" sortable></el-table-column>
+                <el-table-column prop="rolesNotSure" label="不确定的岗位" header-align="center"
+                                 align="center"></el-table-column>
+                <el-table-column label="操作" header-align="center" align="center">
+                    <template scope="scope">
+                        <el-button @click="edit(scope.row)" type="text" size="small" v-bind:disabled="isValid">编辑
+                        </el-button>
+                        <el-button @click="remove(scope.row)" type="text" size="small" v-bind:disabled="isValid">删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-col>
+    </el-row>
+
+    <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="page.pageNo"
+            :page-sizes="[10, 20, 50, 100,200,500]"
+            :page-size="page.pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="page.totalCount"
+            style="text-align: right;margin-top: 10px;">
+    </el-pagination>
+    <el-dialog title="批量添加订单" :visible.sync="addVisible">
+        <el-form>
+            <el-row>
+                <el-col :span="12">
+                </el-col>
+                <el-col :span="6">
+                    <el-button type="button" @click="add">add</el-button>
+                </el-col>
+            </el-row>
+            <el-row v-for="item in items">
+                <el-col :span="12">
+                    <el-form-item>
+                        <el-input auto-complete="off" placeholder="输入订单号" v-model="item.value"></el-input>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="6">
+                    <el-button type="button" @click="removeAppCode(item)">remove</el-button>
+                </el-col>
+            </el-row>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="closeAddDialog(items)">取 消</el-button>
+            <el-button type="primary" @click="addOrderDetailHandler(items)" v-bind:disabled="isDarkInsert">确 定</el-button>
+        </div>
+    </el-dialog>
+    <el-dialog title="编辑订单" :visible.sync="editVisible">
+        <span style="font-weight: bold;font-size:18px">订单编号：{{editSalaryOrder.appCode}}</span>
+        <el-form :model="editSalaryOrder" label-width="100px">
+            <table style="border: 1px solid #dfe6ec;">
+                <tr>
+                    <th width="200">职务</th>
+                    <th width="200">员工姓名</th>
+                    <th width="200">在职状态</th>
+                    <th width="200">是否计费</th>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>销售专员</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="editSalaryOrder.saleName" placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClick(5)"></el-input>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.saleStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.saleCalculateFlag"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>销售主管</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="editSalaryOrder.saleManagerName"
+                                  placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClick(4)">
+                        </el-input>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.saleManagerStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.saleManagerCalculateFlag"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>城市经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="editSalaryOrder.cityManagerName"
+                                  placeholder="输入员工编号"
+                                  @keyup.enter.native="handleIconClick(3)">
+                        </el-input>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.cityManagerStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.cityManagerCalculateFlag"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>区域经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="editSalaryOrder.areaManagerName"
+                                  placeholder="输入员工编号"
+                                  @keyup.enter.native="handleIconClick(2)">
+                        </el-input>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.areaManagerStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.areaManagerCalculateFlag"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>大区经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="editSalaryOrder.regionManagerName"
+                                  placeholder="输入员工编号"
+                                  @keyup.enter.native="handleIconClick(1)">
+                        </el-input>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.regionManagerStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.regionManagerCalculateFlag"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>运营专员</label>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.operationName}}</label>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.operationStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.operationCalculateFlag" disabled/>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>抵押专员</label>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.mortgageUsername}}</label>
+                    </td>
+                    <td align="center">
+                        <label>{{editSalaryOrder.mortgageStatus}}</label>
+                    </td>
+                    <td align="center">
+                        <el-checkbox v-model="editSalaryOrder.mortgageCalculateFlag" disabled/>
+                    </td>
+                </tr>
+
+            </table>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="closeEditDialog(editSalaryOrder)">取 消</el-button>
+            <el-button type="primary" @click="editHandler(editSalaryOrder)" v-bind:disabled="isDark">保 存</el-button>
+        </div>
+    </el-dialog>
+    <el-dialog title="批量编辑" :visible.sync="editBatchVisible">
+        <el-form :model="batchEditStaff" label-width="100px">
+            <table style="border: 1px solid #dfe6ec;">
+                <tr>
+                    <th width="200">职务</th>
+                    <th width="200">员工姓名</th>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>销售主管</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="batchEditStaff.saleManagerName"
+                                  placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClickBatch(4)">
+                        </el-input>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>城市经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="batchEditStaff.cityManagerName"
+                                  placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClickBatch(3)">
+                        </el-input>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>区域经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="batchEditStaff.areaManagerName"
+                                  placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClickBatch(2)">
+                        </el-input>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <label>大区经理</label>
+                    </td>
+                    <td align="center">
+                        <el-input v-model="batchEditStaff.regionManagerName"
+                                  placeholder="请输入员工编号"
+                                  @keyup.enter.native="handleIconClickBatch(1)">
+                        </el-input>
+                    </td>
+                </tr>
+            </table>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="closeBatchEditDialog(batchEditStaff)">取 消</el-button>
+            <el-button type="primary" @click="BatchEditHandler(batchEditStaff)" v-bind:disabled="isBatchDark">保 存
+            </el-button>
+        </div>
+    </el-dialog>
+</div>
+</body>
+<!-- 先引入 Vue -->
+<script src="/js/vue.min.js"></script>
+<!-- 引入组件库 -->
+<script src="/element-ui/lib/index.js"></script>
+<script src="/js/axios.min.js"></script>
+<script src="/js/moment.js"></script>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            items: [],
+            batchEditStaff: {
+                saleManager: '',
+                cityManager: '',
+                areaManager: '',
+                regionManager: '',
+                saleManagerName: '',
+                cityManagerName: '',
+                areaManagerName: '',
+                regionManagerName: '',
+                saleManagerCalculateFlag: null,
+                cityManagerCalculateFlag: null,
+                areaManagerCalculateFlag: null,
+                regionManagerCalculateFlag: null
+            },
+            batchEditIds: '',
+            batchAppCodes:'',
+            sels: [],
+            orderList: [],
+            orderStaffDetail: [],
+            orderCondition: {
+                calculateDate: '',
+                areaName: '',
+                cityName: '',
+                jobType: '',
+                jobValue: '',
+                appCode: '',
+                rolesNotSureStatus: ''
+            },
+            nowDate: '',
+            isValid: false,
+            page: {
+                pageNo: 1,
+                pageSize: 10,
+                totalCount: 0
+            },
+            orderDetail: {
+                appCodes: ''
+            },
+            editSalaryOrder: {
+                appCode: '',
+                saleName: '',
+                sale: '',
+                saleStatus: '',
+                saleCalculateFlag: false,
+                saleManager: '',
+                saleManagerName: '',
+                saleManagerStatus: '',
+                saleManagerCalculateFlag: false,
+                cityManager: '',
+                cityManagerName: '',
+                cityManagerStatus: '',
+                cityManagerCalculateFlag: false,
+                areaManager: '',
+                areaManagerName: '',
+                areaManagerStatus: '',
+                areaManagerCalculateFlag: false,
+                regionManager: '',
+                regionManagerName: '',
+                regionManagerStatus: '',
+                regionManagerCalculateFlag: false,
+                operation: '',
+                operationName: '',
+                operationStatus: '',
+                operationCalculateFlag: false,
+                mortgageUserid: '',
+                mortgageUsername: '',
+                mortgageStatus: '',
+                mortgageCalculateFlag: false,
+            },
+            addVisible: false,
+            editVisible: false,
+            loading: false,
+            isDark: false,
+            isDarkInsert:false,
+            isBatchDark: false,
+            editBatchVisible: false
+        },
+        methods: {
+            removeAppCode(item) {
+                var i = this.items.indexOf(item)
+                this.items.splice(i, 1)
+            },
+            add() {
+                this.items.push({
+                    value: null
+                })
+            },
+            closeBatchEditDialog: function () {
+                vm.editBatchVisible = false;
+            },
+            BatchEditHandler: function (batchEditStaff) {
+                var params = {
+                    batchEditIds: vm.batchEditIds,
+                    saleManager: batchEditStaff.saleManager,
+                    cityManager: batchEditStaff.cityManager,
+                    areaManager: batchEditStaff.areaManager,
+                    regionManager: batchEditStaff.regionManager,
+                    saleManagerCalculateFlag: batchEditStaff.saleManagerCalculateFlag,
+                    cityManagerCalculateFlag: batchEditStaff.cityManagerCalculateFlag,
+                    areaManagerCalculateFlag: batchEditStaff.areaManagerCalculateFlag,
+                    regionManagerCalculateFlag: batchEditStaff.regionManagerCalculateFlag
+                };
+                vm.isBatchDark = true;
+                axios.post('/order/batchModify', params).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status == 0) {
+                        vm.$message({
+                            message: '恭喜你，修改成功',
+                            type: 'success'
+                        });
+                        vm.onSubmit();
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                    vm.isBatchDark = false;
+                    vm.editBatchVisible = false;
+                }).catch(function (error) {
+                    console.log(error);
+                    vm.isBatchDark = false;
+                    vm.editBatchVisible = false;
+                });
+            },
+            handleIconClickBatch: function (roleId) {
+                var employeeId;
+                if (roleId == 4) {
+                    employeeId = vm.batchEditStaff.saleManagerName;
+                } else if (roleId == 3) {
+                    employeeId = vm.batchEditStaff.cityManagerName;
+                } else if (roleId == 2) {
+                    employeeId = vm.batchEditStaff.areaManagerName;
+                } else if (roleId == 1) {
+                    employeeId = vm.batchEditStaff.regionManagerName;
+                }
+                axios.get('/order/getStaffInfoById', {
+                    params: {'employeeId': employeeId, 'roleId': roleId}
+                }).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status === 0) {
+                        var realName = data.realName;
+                        var id = data.id;
+                        if (roleId == 4) {
+                            vm.batchEditStaff.saleManagerName = realName + "(" + id + ")";
+                            vm.batchEditStaff.saleManager = id;
+                            vm.batchEditStaff.saleManagerCalculateFlag = 1;
+                        } else if (roleId == 3) {
+                            vm.batchEditStaff.cityManagerName = realName + "(" + id + ")";
+                            vm.batchEditStaff.cityManager = id;
+                            vm.batchEditStaff.cityManagerCalculateFlag = 1;
+                        } else if (roleId == 2) {
+                            vm.batchEditStaff.areaManagerName = realName + "(" + id + ")";
+                            vm.batchEditStaff.areaManager = id;
+                            vm.batchEditStaff.areaManagerCalculateFlag = 1;
+                        } else if (roleId == 1) {
+                            vm.batchEditStaff.regionManagerName = realName + "(" + id + ")";
+                            vm.batchEditStaff.regionManager = id;
+                            vm.batchEditStaff.regionManagerCalculateFlag = 1;
+                        }
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            mounted() {
+                this.onSearch()
+            },
+            editBatch: function () {
+                var idss = this.sels.map(item => item.appCode).length;
+                vm.batchEditIds = this.sels.map(item => item.appCode).join();
+                var notice = '您好！确定批量修改' + idss + '条订单吗';
+                this.$confirm(notice, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    vm.editBatchVisible = true;
+                    vm.batchEditStaff.saleManagerName = "";
+                    vm.batchEditStaff.cityManagerName = "";
+                    vm.batchEditStaff.areaManagerName = "";
+                    vm.batchEditStaff.regionManagerName = "";
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            calculateBatch:function() {
+                var num = this.sels.map(item => item.appCode).length;
+                vm.batchAppCodes = this.sels.map(item => item.appCode).join();
+                var notice = '您好！确定批量计算' + num + '条订单吗';
+                this.$confirm(notice, '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    var month=moment(vm.orderCondition.calculateDate).format("YYYYMM");
+                    var params = {
+                        appCodes: vm.batchAppCodes,
+                        month:month
+                    };
+                    axios.get('/calculate/batchReCalOrderDetail', {
+                        params: {'appCodes': vm.batchAppCodes, 'month': month}
+                    }).then(function (response) {
+                        let {msg, status, data} = response.data;
+                        if (status == 0) {
+                            vm.$message({
+                                message: '恭喜你，计算完成',
+                                type: 'success'
+                            });
+                            vm.onSubmit();
+                        } else {
+                            vm.$message({
+                                showClose: true,
+                                message: msg,
+                                type: 'error'
+                            });
+                        }
+                    }).catch(function (error) {
+                        console.log(error);
+                    });
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            selsChange(sels) {
+                this.sels = sels
+            },
+            checkNowDate: function () {
+                var date = moment(this.orderCondition.calculateDate).format("YYYYMM");
+                if (vm.nowDate == date) {
+                    vm.isValid = false;
+                } else {
+                    vm.isValid = true;
+                }
+            },
+            regenerateDetail: function () {
+                this.$confirm('您好！重新生成明细需要三分钟左右,确定重新生成明细?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    var date = moment().subtract(1, 'months').calendar();
+                    var month = moment(date).format("YYYYMM");
+                    axios.get('/export/regenerate', {
+                        params: {'type': 1, 'month': month}
+                    }).then(function (response) {
+                        let {msg, status, data} = response.data;
+                        if (status === 0) {
+                            vm.$message({
+                                message: '已提交！',
+                                type: 'success'
+                            });
+                        } else {
+                            vm.$message({
+                                showClose: true,
+                                message: msg,
+                                type: 'error'
+                            });
+                        }
+                    }).catch(function (error) {
+                        console.log(error);
+                    });
+                })
+            },
+            downloadDetail: function () {
+                var month = moment(this.orderCondition.calculateDate).format("YYYYMM");
+                axios.get('/export/download', {
+                    params: {'type': 1, 'isCheck': 1,'month':month}
+                }).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status === 0) {
+                        location.href = "/export/download?month=" + month + "&type=1&isCheck=0";
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            },
+            remove: function (row) {
+                this.$confirm('确定不计算此订单?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(function () {
+                    axios.get('/order/remove', {
+                        params: {'appCode': row.appCode}
+                    }).then(function (response) {
+                        let {msg, status, data} = response.data;
+                        if (status == 0) {
+                            vm.$message({
+                                message: '恭喜你，删除成功',
+                                type: 'success'
+                            });
+                            vm.onSubmit();
+                        } else {
+                            vm.$message({
+                                showClose: true,
+                                message: msg,
+                                type: 'error'
+                            });
+                        }
+                    }).catch(function () {
+                        this.$message({
+                            type: 'info',
+                            message: '已取消删除'
+                        });
+                    });
+
+                })
+            },
+            edit: function (row) {
+                vm.editVisible = true;
+                vm.editSalaryOrder.appCode = row.appCode;
+                vm.editSalaryOrder.saleName = row.saleName;
+                vm.editSalaryOrder.sale = row.sale;
+                vm.editSalaryOrder.saleStatus = row.saleStatus;
+                vm.editSalaryOrder.saleManagerName = row.saleManagerName;
+                vm.editSalaryOrder.saleManager = row.saleManager;
+                vm.editSalaryOrder.saleManagerStatus = row.saleManagerStatus;
+                vm.editSalaryOrder.cityManagerName = row.cityManagerName;
+                vm.editSalaryOrder.cityManager = row.cityManager;
+                vm.editSalaryOrder.cityManagerStatus = row.cityManagerStatus;
+                vm.editSalaryOrder.areaManagerName = row.areaManagerName;
+                vm.editSalaryOrder.areaManager = row.areaManager;
+                vm.editSalaryOrder.areaManagerStatus = row.areaManagerStatus;
+                vm.editSalaryOrder.regionManagerName = row.regionManagerName;
+                vm.editSalaryOrder.regionManager = row.regionManager;
+                vm.editSalaryOrder.regionManagerStatus = row.regionManagerStatus;
+                vm.editSalaryOrder.operationName = row.operationName;
+                vm.editSalaryOrder.operation = row.operation;
+                vm.editSalaryOrder.operationStatus = row.operationStatus;
+                vm.editSalaryOrder.mortgageUsername = row.mortgageUsername;
+                vm.editSalaryOrder.mortgageUserid = row.mortgageUserid;
+                vm.editSalaryOrder.mortgageStatus = row.mortgageStatus;
+                var calculateFlag = row.calculateFlag;
+                if (calculateFlag != null) {
+                    var calculateFlag = row.calculateFlag.split("\|");
+                    if (calculateFlag[0] == "1") {
+                        vm.editSalaryOrder.saleCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.saleCalculateFlag = false;
+                    }
+                    if (calculateFlag[1] == "1") {
+                        vm.editSalaryOrder.saleManagerCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.saleManagerCalculateFlag = false;
+                    }
+                    if (calculateFlag[2] == "1") {
+                        vm.editSalaryOrder.cityManagerCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.cityManagerCalculateFlag = false;
+                    }
+                    if (calculateFlag[3] == "1") {
+                        vm.editSalaryOrder.areaManagerCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.areaManagerCalculateFlag = false
+                    }
+                    if (calculateFlag[4] == "1") {
+                        vm.editSalaryOrder.regionManagerCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.regionManagerCalculateFlag = false
+                    }
+                    if (calculateFlag[5] == "1") {
+                        vm.editSalaryOrder.operationCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.operationCalculateFlag = false
+                    }
+                    if (calculateFlag[6] == "1") {
+                        vm.editSalaryOrder.mortgageCalculateFlag = true;
+                    } else {
+                        vm.editSalaryOrder.mortgageCalculateFlag = false
+                    }
+                }
+
+            },
+            closeAddDialog: function (orderDetail) {
+                vm.initObject(orderDetail);
+                vm.addVisible = false;
+                vm.items=[];
+            },
+            closeEditDialog: function (editSalaryOrder) {
+                vm.initObject(editSalaryOrder);
+                vm.editVisible = false;
+            },
+            editHandler: function (editSalaryOrder) {
+                var params = {
+                    appCode: editSalaryOrder.appCode,
+                    sale: editSalaryOrder.sale,
+                    saleCalculateFlag: editSalaryOrder.saleCalculateFlag ? 1 : 0,
+                    saleManager: editSalaryOrder.saleManager,
+                    saleManagerCalculateFlag: editSalaryOrder.saleManagerCalculateFlag ? 1 : 0,
+                    cityManager: editSalaryOrder.cityManager,
+                    cityManagerCalculateFlag: editSalaryOrder.cityManagerCalculateFlag ? 1 : 0,
+                    areaManager: editSalaryOrder.areaManager,
+                    areaManagerCalculateFlag: editSalaryOrder.areaManagerCalculateFlag ? 1 : 0,
+                    regionManager: editSalaryOrder.regionManager,
+                    regionManagerCalculateFlag: editSalaryOrder.regionManagerCalculateFlag ? 1 : 0
+                };
+                vm.isDark = true;
+                axios.post('/order/modify', params).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status == 0) {
+                        vm.$message({
+                            message: '恭喜你，修改成功',
+                            type: 'success'
+                        });
+                        vm.onSubmit();
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                    vm.isDark = false;
+                    vm.editVisible = false;
+                }).catch(function (error) {
+                    console.log(error);
+                    vm.isDark = false;
+                    vm.editVisible = false;
+                });
+            },
+            addOrderDetailHandler: function (items) {
+                var appCodes="";
+                items.forEach((e)=>{
+                    if(appCodes==""){
+                        appCodes=e.value;
+                    }else{
+                        appCodes=appCodes+","+e.value;
+                    }
+                });
+                vm.isDarkInsert=true;
+                axios.get('/order/batchCreate', {
+                    params: {'appCodes': appCodes}
+                }).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status === 0) {
+                        vm.$message({
+                            message: '恭喜你，添加成功',
+                            type: 'success'
+                        });
+                        vm.onSubmit();
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                    vm.isDarkInsert=false;
+                    vm.addVisible = false;
+                    vm.orderDetail.appCodes = '';
+                    vm.items=[];
+                }).catch(function (error) {
+                    console.log(error);
+                    vm.isDarkInsert=false;
+                    vm.addVisible = false;
+                    vm.orderDetail.appCodes = '';
+                    vm.items=[];
+                });
+            },
+            onSubmit: function () {
+                var calculateDate = moment(this.orderCondition.calculateDate).format("YYYYMM");
+                vm.listPage(1, this.page.pageSize, calculateDate);
+            },
+            dateFormat: function (row, column) {
+                var date = row[column.property];
+                if (date == undefined) {
+                    return "";
+                }
+                return moment(date).format("YYYY-MM-DD");
+            },
+            dateTimeFormat: function (row, column) {
+                var date = row[column.property];
+                if (date == undefined) {
+                    return "";
+                }
+                return moment(date).format("YYYY-MM-DD HH:mm:ss");
+            },
+            ready: function () {
+                var date = moment().subtract(1, 'months').calendar();
+                this.orderCondition.calculateDate = date;
+                vm.nowDate = moment(date).format("YYYYMM");
+                vm.listPage(1, vm.page.pageSize, '');
+            },
+            handleSizeChange: function (val) {
+                var calculateDate = moment(this.orderCondition.calculateDate).format("YYYYMM");
+                vm.listPage(1, val, calculateDate);
+            },
+            handleCurrentChange: function (val) {
+                var calculateDate = moment(this.orderCondition.calculateDate).format("YYYYMM");
+                vm.listPage(val, vm.page.pageSize, calculateDate);
+            },
+            listPage: function (pageNo, pageSize, calculateDate) {
+                vm.loading = true;
+                if (calculateDate == '' || calculateDate == null) {
+                    var date = moment().subtract(1, 'months').calendar();
+                    calculateDate = moment(date).format("YYYYMM");
+                }
+                var params = {
+                    calculateDate: calculateDate,
+                    areaName: this.orderCondition.areaName,
+                    cityName: this.orderCondition.cityName,
+                    jobType: this.orderCondition.jobType,
+                    jobValue: this.orderCondition.jobValue,
+                    appCode: this.orderCondition.appCode,
+                    rolesNotSureStatus: this.orderCondition.rolesNotSureStatus,
+                    pageNo: pageNo,
+                    pageSize: pageSize
+                };
+                axios.post('/order/detail/pagination', params).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    vm.loading = false;
+                    if (status === 0) {
+                        vm.orderList = data.list;
+                        vm.page.pageSize = data.pageSize;
+                        vm.page.pageNo = data.pageNo;
+                        vm.page.totalCount = data.totalCount;
+                        vm.checkNowDate();
+                        if (vm.sels.length != 0) {
+                            vm.$refs.table.clearSelection();
+                        }
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                }).catch(function (error) {
+                    vm.loading = false;
+                    vm.checkNowDate();
+                    if (vm.sels.length != 0) {
+                        vm.$refs.table.clearSelection();
+                    }
+                });
+            },
+            initObject: function (obj) {
+                for (var i in obj) {
+                    if (obj.hasOwnProperty(i)) { //filter,只输出man的私有属性
+                        obj[i] = '';
+                    }
+                }
+            },
+            handleIconClick(roleId) {
+                var employeeId;
+                if (roleId == 5) {
+                    employeeId = vm.editSalaryOrder.saleName;
+                } else if (roleId == 4) {
+                    employeeId = vm.editSalaryOrder.saleManagerName;
+                } else if (roleId == 3) {
+                    employeeId = vm.editSalaryOrder.cityManagerName;
+                } else if (roleId == 2) {
+                    employeeId = vm.editSalaryOrder.areaManagerName;
+                } else if (roleId == 1) {
+                    employeeId = vm.editSalaryOrder.regionManagerName;
+                }
+                axios.get('/order/getStaffInfoById', {
+                    params: {'employeeId': employeeId, 'roleId': roleId}
+                }).then(function (response) {
+                    let {msg, status, data} = response.data;
+                    if (status === 0) {
+                        var realName = data.realName;
+                        var id = data.id;
+                        if (roleId == 5) {
+                            vm.editSalaryOrder.saleName = realName + "(" + id + ")";
+                            vm.editSalaryOrder.sale = id;
+                        } else if (roleId == 4) {
+                            vm.editSalaryOrder.saleManagerName = realName + "(" + id + ")";
+                            vm.editSalaryOrder.saleManager = id;
+                        } else if (roleId == 3) {
+                            vm.editSalaryOrder.cityManagerName = realName + "(" + id + ")";
+                            vm.editSalaryOrder.cityManager = id;
+                        } else if (roleId == 2) {
+                            vm.editSalaryOrder.areaManagerName = realName + "(" + id + ")";
+                            vm.editSalaryOrder.areaManager = id;
+                        } else if (roleId == 1) {
+                            vm.editSalaryOrder.regionManagerName = realName + "(" + id + ")";
+                            vm.editSalaryOrder.regionManager = id;
+                        }
+                    } else {
+                        vm.$message({
+                            showClose: true,
+                            message: msg,
+                            type: 'error'
+                        });
+                    }
+                }).catch(function (error) {
+                    console.log(error);
+                });
+            }
+        }
+    });
+    vm.ready();
+</script>
+</html>

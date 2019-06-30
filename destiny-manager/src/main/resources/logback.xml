@@ -36,7 +36,7 @@
 		</filter> 
 	</appender>
 
-	<logger name="com.hull.destiny" level="INFO" />
+	<logger name="com.hull.busflow" level="INFO" />
 	<logger name="org.springframework" level="INFO"/>
 
 	<root level="INFO">

@@ -35,6 +35,7 @@
         <module>destiny-canal</module>
         <module>destiny-digger</module>
         <module>destiny-web</module>
+        <module>zipkin-server</module>
     </modules>
 
 
