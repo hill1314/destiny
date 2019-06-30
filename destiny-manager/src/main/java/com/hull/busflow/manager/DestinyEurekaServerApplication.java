@@ -15,14 +15,14 @@ import org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
 
 @SpringBootApplication
 @EnableEurekaServer
-public class DestinyManagerApplication {
+public class DestinyEurekaServerApplication {
 
-    public static Logger logger = LoggerFactory.getLogger(DestinyManagerApplication.class);
+    public static Logger logger = LoggerFactory.getLogger(DestinyEurekaServerApplication.class);
 
     public static void main(String[] args) {
-        SpringApplication.run(DestinyManagerApplication.class, args);
+        SpringApplication.run(DestinyEurekaServerApplication.class, args);
         logger.info("============================================");
-        logger.info("Destiny Manager （Eureka）startup");
+        logger.info("Destiny Eureka Server startup");
         logger.info("============================================");
 
     }

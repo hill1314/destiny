@@ -36,6 +36,7 @@
         <module>destiny-digger</module>
         <module>destiny-web</module>
         <module>zipkin-server</module>
+        <module>destiny-dispatch</module>
     </modules>
 
 

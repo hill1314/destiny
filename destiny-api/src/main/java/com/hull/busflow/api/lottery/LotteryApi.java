@@ -21,5 +21,4 @@ public interface LotteryApi{
      */
     BaseRPCResponse<LotteryDTO> doLottery(String userId,Long activityId);
 
-
 }
