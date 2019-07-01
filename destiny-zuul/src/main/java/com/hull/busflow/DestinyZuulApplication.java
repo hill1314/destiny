@@ -19,9 +19,9 @@ import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 @EnableCircuitBreaker
 @EnableFeignClients
 //@ComponentScan(basePackages = {"com.hull.destiny"})
-public class DestinyGatewayApplication {
+public class DestinyZuulApplication {
     public static void main(String[] args) {
-        SpringApplication.run(DestinyGatewayApplication.class, args);
+        SpringApplication.run(DestinyZuulApplication.class, args);
 //        new SpringApplicationBuilder(DestinyGatewayApplication.class).web(true).run(args);
         System.out.println("GatewayApp start up!");
     }

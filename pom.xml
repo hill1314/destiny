@@ -31,7 +31,7 @@
         <module>destiny-entity</module>
         <module>destiny-api</module>
         <module>destiny-common</module>
-        <module>destiny-gateway</module>
+        <module>destiny-zuul</module>
         <module>destiny-canal</module>
         <module>destiny-digger</module>
         <module>destiny-web</module>
