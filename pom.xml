@@ -12,8 +12,9 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.10.RELEASE</version>
-        <relativePath/> 
+        <version>2.0.5.RELEASE</version>
+        <!--<version>1.5.10.RELEASE</version>-->
+        <relativePath/>
     </parent>
 
     <properties>
@@ -37,6 +38,7 @@
         <module>destiny-web</module>
         <module>zipkin-server</module>
         <module>destiny-dispatch</module>
+        <module>destiny-gateway</module>
     </modules>
 
 
