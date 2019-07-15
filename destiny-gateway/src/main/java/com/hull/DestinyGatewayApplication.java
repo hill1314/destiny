@@ -2,8 +2,12 @@ package com.hull;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.client.SpringCloudApplication;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RequestPredicates;
@@ -22,7 +26,10 @@ import java.util.concurrent.TimeUnit;
  * @author
  * @create 2019-07-01 16:47
  **/
-
+//@SpringBootConfiguration
+@EnableAutoConfiguration
+@SpringCloudApplication
+//@Import(AdditionalRoutes.class)
 public class DestinyGatewayApplication {
 
     public static final String HELLO_FROM_FAKE_ACTUATOR_METRICS_GATEWAY_REQUESTS = "hello from fake /actuator/metrics/gateway.requests";

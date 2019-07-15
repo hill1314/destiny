@@ -25,9 +25,9 @@ import javax.servlet.http.HttpServletRequest;
 public class LotterController {
 
     @Resource
-    private LotteryApi lotteryApi;
+    private LotteryApi lotteryApi; //通过restTemplate 方式调用
     @Autowired
-    private LotteryService lotteryService;
+    private LotteryService lotteryService; //通过feign 的方式调用
 
     @RequestMapping("/doLottery")
     public BaseRPCResponse<LotteryDTO> doLottery(HttpServletRequest request, String userId, Long activityId){

@@ -4,6 +4,7 @@ package com.hull.dispatch.service;
 import com.hull.busflow.dto.BaseRPCResponse;
 import com.hull.busflow.dto.LotteryDTO;
 import com.hull.dispatch.facade.LotteryFacade;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +29,18 @@ public class LotteryService {
      * @param activityId
      * @return
      */
+    @HystrixCommand(fallbackMethod="doLotteryFallback")
     public BaseRPCResponse<LotteryDTO> doLottery(String userId, Long activityId) {
         log.info("抽奖 请求参数:userId={},activityId={}",userId,activityId);
         BaseRPCResponse<LotteryDTO> resp = lotteryFacade.doLottery(userId,activityId);
         //判断返回结果
         log.info("抽奖 返回参数:"+resp.getData());
         return resp;
+    }
+
+    public BaseRPCResponse<LotteryDTO> doLotteryFallback(String userId, Long activityId){
+        log.error("doLotteryFallback:userId={},activityId={}",userId,activityId);
+        return new BaseRPCResponse();
     }
 
 
